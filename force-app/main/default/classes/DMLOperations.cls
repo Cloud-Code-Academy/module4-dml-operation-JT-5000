@@ -199,14 +199,22 @@ public with sharing class DMLOperations {
 	 */
 	public static Account upsertAccount(String accountName) {
 		// Query for the Account
-		List<Account> accounts = [SELECT Id FROM Account WHERE Name = :accountName];
+		List<Account> accounts = [SELECT Id, Name, Description FROM Account WHERE Name = :accountName LIMIT 1];
 
-		// if the Account exists, update the description
+        Account acc;
 
-		// otherwise, create a new Account and set the description
+        if (!accounts.isEmpty()) {
+            acc = accounts[0];
+            acc.Description = 'Updated Account';
+        }else{
+            acc = new Account();
+            acc.Name = accountName;
+            acc.Description = 'New Account';
+        }
 
-		// Upsert the Account
-		return null;
+		upsert acc;
+
+        return acc;
 	}
 
     /**
@@ -219,15 +227,11 @@ public with sharing class DMLOperations {
 	 * @param contactsToUpsert List of Contacts to be upserted and linked to accounts.
 	 */
 	public static void upsertAccountsWithContacts(List<Contact> contactsToUpsert) {
-		// Loop through each Contact
-
-		// Extract the Account Name from Contact's LastName
-
-		// Get the account based on the name or create one if it doesn't exist
-
-		// Link the Contact to its Account using the Account Id
-
-		// Upsert the Contacts
+        for (Contact contact : contactsToUpsert) {
+            Account acc = DMLOperations.upsertAccount(contact.LastName);
+            contact.AccountId = acc.Id;
+        }
+        upsert contactsToUpsert;
 	}
 
     /**
@@ -237,10 +241,18 @@ public with sharing class DMLOperations {
      */
     public static void insertAndDeleteLeads(List<String> leadNames) {
         // Loop through each Lead name
+        List<Lead> leadList = new List<Lead>();
+
+        for (String name : leadNames) {
+            Lead lead = new Lead(LastName = name, Company = 'New Company');
+            leadList.add(lead);
+        }
 
         // Insert the Leads
+        insert leadList;
 
         // Delete the Leads
+        delete leadList;
     }
 
 
@@ -252,7 +264,19 @@ public with sharing class DMLOperations {
      */
     public static void createAndDeleteCases(String accountId, Integer numOfCases) {
         // Insert the cases
+        List<Case> caseList = new List<Case>();
+
+        for (Integer i = 0; i < numOfCases; i++) {
+            Case c = new Case();
+            c.Status = 'New';
+            c.Origin = 'Phone';
+
+            caseList.add(c);
+        }
+
+        insert caseList;
 
         // Delete the cases
+        delete caseList;
     }
 }
