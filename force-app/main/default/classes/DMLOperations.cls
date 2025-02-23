@@ -91,11 +91,13 @@ public with sharing class DMLOperations {
      */
     public static void updateContactLastName(Id contactId, String newLastName) {
         // Retrieve the Contact from the database
-        // [SELECT Id FROM Contact WHERE Id = :contactId]
+        Contact singleContact = [SELECT Id, LastName FROM Contact WHERE Id = :contactId];
 
         // Update the Contact's last name
+        singleContact.LastName = newLastName;
 
         // Update the Contact in the database
+        update singleContact;
     }
 
     /**
@@ -107,11 +109,13 @@ public with sharing class DMLOperations {
      */
     public static void updateOpportunityStage(Id oppId, String newStage) {
         // Retrieve the Opportunity from the database
-        // [SELECT Id FROM Opportunity WHERE Id = :oppId]
+        Opportunity myOpp = [SELECT Id, StageName FROM Opportunity WHERE Id = :oppId];
 
         // Update the Opportunity's stage
+        myopp.StageName = newStage;
 
         // Update the Opportunity in the database
+        update myOpp;
     }
 
     /**
@@ -124,9 +128,13 @@ public with sharing class DMLOperations {
      */
     public static void updateAccountFields(Id accountId, String newName, String newIndustry) {
         // Query the account
-        // [SELECT Id FROM Account WHERE Id = :accountId]
+        Account acct = [SELECT Id, Name, Industry FROM Account WHERE Id = :accountId];
 
         // Update the Account with the given Id with the new name and industry
+        acct.Name = newName;
+        acct.Industry = newIndustry;
+
+        update acct;
     }
 
 
@@ -140,10 +148,16 @@ public with sharing class DMLOperations {
      */
     public static void upsertOpportunityList(List<Opportunity> opportunities) {
         // Loop through each Opportunity in the list
+        for (Opportunity opp : opportunities){
+            opp.StageName = 'Qualification';
+            opp.CloseDate = Date.today().addMonths(3);
+            opp.Amount = 50000;
+        }
             // Set the Opportunity's Stage to Qualification
             // Set the Opportunity's Close Date to 3 months from today
             // Set the Opportunity's Amount to 50000
         // Upsert the opportunities List so that records are either updated or created
+        upsert opportunities;
     }
 
     /**
@@ -157,9 +171,22 @@ public with sharing class DMLOperations {
      * @param oppNames The list of Opportunity names.
      */
     public static void upsertOpportunities(String accountName, List<String> oppNames) {
-        // Loop through each Opportunity name
-            // Create an Opportunity with the given name
-            // Add the Opportunity to the list
+        List<Opportunity> oppList = new List<Opportunity>();
+        
+        Account acc = new Account(Name = accountName);
+        insert acc;
+
+        for (String name : oppNames) {
+            Opportunity opp = new Opportunity(
+                Name = name,
+                StageName = 'Qualification',
+                CloseDate = Date.today().addDays(4),
+                Amount = 25000,
+                AccountId = acc.Id
+            );
+            oppList.add(opp);
+        }
+        insert oppList;
     }
     
     /**
